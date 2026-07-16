@@ -1,0 +1,59 @@
+name: Sync TikTok Finance
+
+on:
+  schedule:
+    - cron: "7,37 * * * *"
+  workflow_dispatch:
+    inputs:
+      from:
+        description: "FROM (yyyy/MM/dd)"
+        required: true
+        type: string
+      to:
+        description: "TO (yyyy/MM/dd)"
+        required: true
+        type: string
+
+concurrency:
+  group: sync-tiktok-finance
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  sync-finance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      SYNC_ENV: ${{ vars.SYNC_ENV }}
+      FROM: ${{ github.event_name == 'workflow_dispatch' && inputs.from || vars.FROM }}
+      TO: ${{ github.event_name == 'workflow_dispatch' && inputs.to || vars.TO }}
+      DRY_RUN: ${{ vars.DRY_RUN }}
+      LOG_LEVEL: info
+      LARK_BATCH_SIZE: 500
+      TIKTOK_SHOP_ID: ${{ vars.TIKTOK_SHOP_ID }}
+      TIKTOK_PARTNER_APP_KEY: ${{ secrets.TIKTOK_PARTNER_APP_KEY }}
+      TIKTOK_PARTNER_APP_SECRET: ${{ secrets.TIKTOK_PARTNER_APP_SECRET }}
+      LARK_APP_ID: ${{ secrets.LARK_APP_ID }}
+      LARK_APP_SECRET: ${{ secrets.LARK_APP_SECRET }}
+      DATABASE_URL: ${{ secrets.DATABASE_URL }}
+      AES_256_CBC_APP_SECRET_KEY: ${{ secrets.AES_256_CBC_APP_SECRET_KEY }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm test
+
+      - name: Sync settled finance transactions
+        run: npm run sync:finance

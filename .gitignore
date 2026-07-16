@@ -1,0 +1,49 @@
+.env
+.env.*
+!.env.example
+.envrc
+.direnv/
+
+# Legacy n8n exports contain credentials, tokens and production IDs.
+.n8n/
+
+# Local scratch files may contain copied app credentials or table exports.
+temp/
+tmp/
+
+node_modules/
+coverage/
+dist/
+*.log
+
+# Private keys, certificates and keystores.
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+*.jks
+*.keystore
+
+# Local package/CLI authentication.
+.npmrc
+.yarnrc.yml
+.pnpmrc
+.pgpass
+
+# Common credential and token exports.
+credentials.json
+credentials/
+secrets/
+*.secrets.json
+auth.json
+token.json
+service-account*.json
+
+# Local databases and database exports can contain production data.
+*.sqlite
+*.sqlite3
+*.db
+*.dump
+*.backup
