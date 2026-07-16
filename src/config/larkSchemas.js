@@ -68,7 +68,6 @@ export const LARK_SCHEMAS = Object.freeze({
     currency("Doanh thu (Gross)"),
     currency("Thực thu (Net)"),
     currency("Tổng phí & thuế"),
-    currency("Tổng phí"),
     currency("Số tiền điều chỉnh"),
     currency("Phí ship người bán"),
     currency("Khách hàng thanh toán"),

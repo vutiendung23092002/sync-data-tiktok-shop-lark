@@ -10,11 +10,6 @@ function datetime(value) {
   return Math.abs(parsed) < 1e12 ? parsed * 1000 : parsed;
 }
 
-function sumAmounts(...values) {
-  const amounts = values.map(number).filter((value) => value != null);
-  return amounts.length === 0 ? null : amounts.reduce((total, value) => total + value, 0);
-}
-
 function compact(fields) {
   return Object.fromEntries(Object.entries(fields).filter(([, value]) => value !== null && value !== undefined));
 }
@@ -47,7 +42,6 @@ export function mapFinanceTransaction(transaction, { statement, shopId, shopName
       "Doanh thu (Gross)": number(transaction.revenue_amount),
       "Thực thu (Net)": number(transaction.settlement_amount),
       "Tổng phí & thuế": number(transaction.fee_tax_amount),
-      "Tổng phí": sumAmounts(transaction.fee_tax_amount, transaction.shipping_cost_amount),
       "Số tiền điều chỉnh": number(transaction.adjustment_amount),
       "Phí ship người bán": number(transaction.shipping_cost_amount),
       "Khách hàng thanh toán": number(supplementary.customer_payment_amount),

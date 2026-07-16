@@ -140,7 +140,7 @@ cũ và n8n — không có field nào lệch, giữ nguyên toàn bộ danh sác
 | revenue_amount | Doanh thu (Gross) | Currency | `transaction.revenue_amount` |
 | settlement_amount | Thực thu (Net) | Currency | `transaction.settlement_amount` |
 | fee_tax_amount | Tổng phí & thuế | Currency | `transaction.fee_tax_amount` |
-| total_fee | Tổng phí | Currency | `fee_tax_amount + shipping_cost_amount` |
+| — | Tổng phí | Formula | Do Lark tự tính; luồng sync không tạo hoặc ghi field này |
 | adjustment_amount | Số tiền điều chỉnh | Currency | `transaction.adjustment_amount` |
 | shipping_cost_amount | Phí ship người bán | Currency | `transaction.shipping_cost_amount` |
 | customer_payment_amount | Khách hàng thanh toán | Currency | `supplementary_component.customer_payment_amount` |

@@ -26,7 +26,7 @@ test("finance mapper emits documented identity, dates, totals and nested breakdo
   assert.equal(mapped.fields["Ngày tạo đơn"], 1_720_000_000_000);
   assert.equal(mapped.fields["Ngày quyết toán"], 1_720_100_000_000);
   assert.equal(mapped.fields["Mã statemen"], "statement-1");
-  assert.equal(mapped.fields["Tổng phí"], -22000);
+  assert.equal(Object.hasOwn(mapped.fields, "Tổng phí"), false);
   assert.equal(mapped.fields["Khách hàng thanh toán"], 100000);
   assert.equal(mapped.fields["Phí nền tảng (Platform Commission)"], -8000);
   assert.equal(mapped.fields["Thuế VAT"], -1000);
