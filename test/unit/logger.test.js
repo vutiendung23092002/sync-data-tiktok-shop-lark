@@ -46,10 +46,10 @@ test("Git Bash detection is limited to Windows MSYS environments", () => {
 });
 
 test("pretty logs are local-only and remain JSON in CI", () => {
-  assert.equal(shouldPrettyLogs({ ci: undefined, isTTY: true, msys: false }), true);
-  assert.equal(shouldPrettyLogs({ ci: undefined, isTTY: false, msys: true }), true);
+  assert.equal(shouldPrettyLogs({ ci: false, isTTY: true, msys: false }), true);
+  assert.equal(shouldPrettyLogs({ ci: false, isTTY: false, msys: true }), true);
   assert.equal(shouldPrettyLogs({ ci: "true", isTTY: true, msys: true }), false);
-  assert.equal(shouldPrettyLogs({ ci: undefined, isTTY: false, msys: false }), false);
+  assert.equal(shouldPrettyLogs({ ci: false, isTTY: false, msys: false }), false);
 });
 
 test("ASCII-safe logger keeps Vietnamese log fields readable in Git Bash", () => {
