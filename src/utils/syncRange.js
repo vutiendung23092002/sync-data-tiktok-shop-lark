@@ -24,3 +24,24 @@ export function getSyncRange({ from: fromValue, to: toValue }, now = DateTime.no
     maxToPolicy: maxTo,
   });
 }
+
+export function getFinanceStatementRange(range) {
+  const fromDate = DateTime.fromFormat(range?.requestedFrom ?? "", "yyyy/MM/dd", { zone: "UTC" }).startOf("day");
+  const effectiveToDate = DateTime.fromFormat(range?.effectiveTo ?? "", "yyyy/MM/dd", { zone: "UTC" }).startOf("day");
+  if (!fromDate.isValid || !effectiveToDate.isValid || fromDate > effectiveToDate) {
+    throw new Error("Invalid Finance statement range");
+  }
+
+  const filterToDate = effectiveToDate.plus({ days: 1 });
+  const filterFrom = Math.floor(fromDate.toSeconds());
+  const filterTo = Math.floor(filterToDate.toSeconds());
+
+  // TikTok statements are grouped by UTC calendar date. Their API documentation
+  // recommends avoiding exactly 00:00 UTC for these date-filter parameters.
+  return Object.freeze({
+    from: filterFrom + 1,
+    to: filterTo + 1,
+    filterFrom,
+    filterTo,
+  });
+}

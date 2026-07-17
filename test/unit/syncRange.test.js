@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { DateTime } from "luxon";
 
-import { getSyncRange } from "../../src/utils/syncRange.js";
+import { getFinanceStatementRange, getSyncRange } from "../../src/utils/syncRange.js";
 
 const now = DateTime.fromISO("2026-07-16T10:00:00+07:00", { setZone: true });
 
@@ -36,4 +36,17 @@ test("Return Orders policy preserves today and caps only future TO values to tod
   assert.equal(futureRange.effectiveTo, "2026/07/16");
   assert.equal(futureRange.toWasCapped, true);
   assert.equal(futureRange.maxToPolicy, "today");
+});
+
+test("Finance statement range uses UTC calendar dates and avoids exact midnight API boundaries", () => {
+  const financeNow = DateTime.fromISO("2026-07-17T10:00:00+07:00", { setZone: true });
+  const range = getSyncRange({ from: "2026/07/15", to: "2026/07/16" }, financeNow);
+  const statementRange = getFinanceStatementRange(range);
+
+  assert.equal(DateTime.fromSeconds(range.from).toUTC().toISO(), "2026-07-14T17:00:00.000Z");
+  assert.equal(DateTime.fromSeconds(range.to).toUTC().toISO(), "2026-07-16T17:00:00.000Z");
+  assert.equal(DateTime.fromSeconds(statementRange.from).toUTC().toISO(), "2026-07-15T00:00:01.000Z");
+  assert.equal(DateTime.fromSeconds(statementRange.to).toUTC().toISO(), "2026-07-17T00:00:01.000Z");
+  assert.equal(DateTime.fromSeconds(statementRange.filterFrom).toUTC().toISO(), "2026-07-15T00:00:00.000Z");
+  assert.equal(DateTime.fromSeconds(statementRange.filterTo).toUTC().toISO(), "2026-07-17T00:00:00.000Z");
 });

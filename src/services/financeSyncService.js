@@ -18,6 +18,13 @@ function transactionResponseIsSettled(statement, response) {
   return normalizedStatus(statement.payment_status) === "SETTLED";
 }
 
+function statementIsInRange(statement, range) {
+  const statementTime = Number(statement?.statement_time);
+  return Number.isFinite(statementTime)
+    && statementTime >= range.from
+    && statementTime < range.to;
+}
+
 function groupByTable(records) {
   const groups = new Map();
   for (const record of records) {
@@ -31,13 +38,25 @@ function groupByTable(records) {
 export function createFinanceSyncService({ environment, larkUpsertService, logger } = {}) {
   if (!larkUpsertService) throw new Error("larkUpsertService is required");
 
-  async function sync({ statements, shop, fetchTransactions, range }) {
+  async function sync({ statements, shop, fetchTransactions, range, statementRange = range }) {
     if (typeof fetchTransactions !== "function") throw new Error("fetchTransactions is required");
     if (!range) throw new Error("range is required");
-    const sourceStatements = dedupeMappedRecords(statements, {
+    if (!statementRange || !Number.isFinite(statementRange.filterFrom ?? statementRange.from)
+      || !Number.isFinite(statementRange.filterTo ?? statementRange.to)) {
+      throw new Error("A valid Finance statement range is required");
+    }
+    const statementFilter = {
+      from: statementRange.filterFrom ?? statementRange.from,
+      to: statementRange.filterTo ?? statementRange.to,
+    };
+    if (statementFilter.from >= statementFilter.to) throw new Error("A valid Finance statement range is required");
+
+    const dedupedStatements = dedupeMappedRecords(statements, {
       keySelector: (statement) => statement.id,
       timestampSelector: (statement) => Number(statement.statement_time ?? statement.create_time ?? 0),
     });
+    const sourceStatements = dedupedStatements.filter((statement) => statementIsInRange(statement, statementFilter));
+    const outOfRangeStatements = dedupedStatements.length - sourceStatements.length;
     const eligibleStatements = sourceStatements.filter(eligibleStatementStatus);
     const mappedTransactions = [];
     let skippedUnsettled = sourceStatements.length - eligibleStatements.length;
@@ -68,7 +87,9 @@ export function createFinanceSyncService({ environment, larkUpsertService, logge
 
     return Object.freeze({
       fetchedStatements: statements.length,
-      dedupedStatements: sourceStatements.length,
+      dedupedStatements: dedupedStatements.length,
+      inRangeStatements: sourceStatements.length,
+      outOfRangeStatements,
       eligibleStatements: eligibleStatements.length,
       skippedUnsettled,
       transactions: uniqueTransactions.length,

@@ -57,3 +57,34 @@ test("finance service does not write PAID statement unless transaction response 
   assert.equal(result.transactions, 0);
   assert.equal(upserts.length, 0);
 });
+
+test("finance service rejects statements returned outside the requested UTC statement dates", async () => {
+  const { service, upserts } = setup();
+  const fetchedStatementIds = [];
+  const result = await service.sync({
+    statements: [
+      { id: "day-16", payment_status: "SETTLED", statement_time: 1_784_160_000 },
+      { id: "day-17", payment_status: "SETTLED", statement_time: 1_784_246_400 },
+      { id: "day-18", payment_status: "SETTLED", statement_time: 1_784_332_800 },
+    ],
+    shop: { shopId: "shop-1", shopName: "Shop" },
+    range: { from: 1_784_221_200, to: 1_784_307_600 },
+    statementRange: {
+      from: 1_784_246_401,
+      to: 1_784_332_801,
+      filterFrom: 1_784_246_400,
+      filterTo: 1_784_332_800,
+    },
+    fetchTransactions: async (statement) => {
+      fetchedStatementIds.push(statement.id);
+      return { status: "SETTLED", transactions: [{ id: `tx-${statement.id}` }] };
+    },
+  });
+
+  assert.deepEqual(fetchedStatementIds, ["day-17"]);
+  assert.equal(result.fetchedStatements, 3);
+  assert.equal(result.dedupedStatements, 3);
+  assert.equal(result.inRangeStatements, 1);
+  assert.equal(result.outOfRangeStatements, 2);
+  assert.equal(upserts.length, 1);
+});

@@ -9,7 +9,7 @@ import { createTokenRepository } from "../src/repositories/tokenRepository.js";
 import { createFinanceSyncService } from "../src/services/financeSyncService.js";
 import { createLarkUpsertService } from "../src/services/larkUpsertService.js";
 import { createTikTokTokenService } from "../src/services/tiktokTokenService.js";
-import { getSyncRange } from "../src/utils/syncRange.js";
+import { getFinanceStatementRange, getSyncRange } from "../src/utils/syncRange.js";
 import { createLogger } from "../src/utils/logger.js";
 
 const env = loadEnv();
@@ -27,7 +27,12 @@ try {
     const context = await tokenService.load();
     const tiktok = createTikTokClient({ ...shopConfig, tokenProvider: tokenService, logger });
     const range = getSyncRange(env);
-    const statements = await tiktok.getStatements({ shopCipher: context.shopCipher, statementTimeGe: range.from, statementTimeLt: range.to });
+    const statementRange = getFinanceStatementRange(range);
+    const statements = await tiktok.getStatements({
+      shopCipher: context.shopCipher,
+      statementTimeGe: statementRange.from,
+      statementTimeLt: statementRange.to,
+    });
     const larkClient = createLarkClient({ appId: env.larkAppId, appSecret: env.larkAppSecret, logger });
     const financeService = createFinanceSyncService({
       environment: env.syncEnv,
@@ -38,9 +43,10 @@ try {
       statements,
       shop: { shopId: context.shopId, shopName: context.shopName },
       range,
+      statementRange,
       fetchTransactions: (statement) => tiktok.getStatementTransactions({ shopCipher: context.shopCipher, statementId: statement.id }),
     });
-    logger.info({ ...result, range, shopId: context.shopId }, "Finance sync completed");
+    logger.info({ ...result, range, statementRange, shopId: context.shopId }, "Finance sync completed");
   }
 } finally {
   await database.close();
