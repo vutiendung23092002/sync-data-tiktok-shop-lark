@@ -15,6 +15,7 @@
     "tiktok:token:import-legacy": "node scripts/import-legacy-tiktok-token.js",
     "start": "node src/index.js",
     "sync:finance": "node scripts/sync-finance.js",
+    "sync:unsettled-transactions": "node scripts/sync-unsettled-transactions.js",
     "sync:orders": "node scripts/sync-orders.js",
     "sync:return-orders": "node scripts/sync-return-orders.js",
     "test": "node --test",

@@ -72,3 +72,33 @@ test("TikTok Returns client paginates v202309 by create-time range", async () =>
   assert.equal(requests[0].url.searchParams.get("page_size"), "50");
   assert.deepEqual(requests[0].body, { create_time_ge: 100, create_time_lt: 200 });
 });
+
+test("TikTok unsettled client paginates the complete snapshot without a time filter", async () => {
+  const urls = [];
+  const client = createTikTokClient({
+    appKey: "key",
+    appSecret: "secret",
+    tokenProvider: { getAccessToken: async () => "token" },
+    fetchImpl: async (url) => {
+      const parsed = new URL(url);
+      urls.push(parsed);
+      return parsed.searchParams.has("page_token")
+        ? response({ total_count: 2, transactions: [{ id: "t2" }] })
+        : response({
+          total_count: 1,
+          sum_est_settlement_amount: "30",
+          transactions: [{ id: "t1" }],
+          next_page_token: "page-2",
+        });
+    },
+  });
+
+  const snapshot = await client.getUnsettledTransactions({ shopCipher: "cipher" });
+  assert.deepEqual(snapshot.transactions.map((item) => item.id), ["t1", "t2"]);
+  assert.equal(snapshot.totals.totalCount, 2);
+  assert.equal(snapshot.totals.estimatedSettlementAmount, "30");
+  assert.equal(urls[0].pathname, "/finance/202507/orders/unsettled");
+  assert.equal(urls[0].searchParams.get("sort_field"), "order_create_time");
+  assert.equal(urls[0].searchParams.has("search_time_ge"), false);
+  assert.equal(urls[0].searchParams.has("search_time_lt"), false);
+});

@@ -142,6 +142,15 @@ export function createLarkClient({ appId, appSecret, logger, sdkClient } = {}) {
     return response.data?.records ?? [];
   }
 
+  async function batchDelete(appToken, tableId, recordIds) {
+    if (recordIds.length === 0) return [];
+    const response = await call(() => sdk.bitable.appTableRecord.batchDelete({
+      data: { records: recordIds },
+      path: { app_token: appToken, table_id: tableId },
+    }), "batch delete records");
+    return response.data?.records ?? [];
+  }
+
   return Object.freeze({
     sdk,
     call,
@@ -154,5 +163,6 @@ export function createLarkClient({ appId, appSecret, logger, sdkClient } = {}) {
     searchAllRecords,
     batchCreate,
     batchUpdate,
+    batchDelete,
   });
 }

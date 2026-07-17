@@ -24,6 +24,7 @@ export const LARK_TABLE_MAPPING = Object.freeze({
     ]),
     returnOrders: "tblnjLBEA5z2YPWi",
     skus: "tblLQJtTQeHekkcm",
+    unsettledTransactions: "tblkcawPHaBJQqSp",
   }),
   test: Object.freeze({
     baseId: "Df3WbKnmyaeUKJsphablcI8Jgeh",
@@ -44,6 +45,7 @@ export const LARK_TABLE_MAPPING = Object.freeze({
     ]),
     returnOrders: "tbly3C00nrthqV0H",
     skus: "tblSu9mTdLHf6CRI",
+    unsettledTransactions: "tbl0uBF1PCAVgEne",
   }),
 });
 
@@ -77,6 +79,10 @@ export function validateLarkTableMapping(environment, mapping = LARK_TABLE_MAPPI
     throw new Error(`Missing Lark SKUS table ID for ${environment}`);
   }
   allIds.push(config.skus);
+  if (typeof config.unsettledTransactions !== "string" || !config.unsettledTransactions.trim()) {
+    throw new Error(`Missing Lark unsettled transactions table ID for ${environment}`);
+  }
+  allIds.push(config.unsettledTransactions);
   if (new Set(allIds).size !== allIds.length) {
     throw new Error(`Duplicate Lark table ID found in ${environment} mapping`);
   }
@@ -87,6 +93,9 @@ export function getLarkTableConfig({ environment, type, month }) {
   const config = validateLarkTableMapping(environment);
   if (type === "returnOrders") return Object.freeze({ baseId: config.baseId, tableId: config.returnOrders });
   if (type === "skus") return Object.freeze({ baseId: config.baseId, tableId: config.skus });
+  if (type === "unsettledTransactions") {
+    return Object.freeze({ baseId: config.baseId, tableId: config.unsettledTransactions });
+  }
   if (!MONTHLY_TYPES.includes(type)) throw new Error(`Unknown Lark table type: ${type}`);
   const normalizedMonth = Number(month);
   if (!Number.isInteger(normalizedMonth) || normalizedMonth < 1 || normalizedMonth > 12) {

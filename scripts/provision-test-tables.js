@@ -9,7 +9,15 @@ const client = createLarkClient({ appId: process.env.LARK_APP_ID, appSecret: pro
 const schemaService = createLarkSchemaService({ larkClient: client, logger: console });
 const existingTables = await client.listTables(TEST_BASE_ID);
 const byName = new Map(existingTables.map((table) => [table.name, table]));
-const mapping = { baseId: TEST_BASE_ID, orders: {}, orderItems: {}, finance: {}, returnOrders: null, skus: null };
+const mapping = {
+  baseId: TEST_BASE_ID,
+  orders: {},
+  orderItems: {},
+  finance: {},
+  returnOrders: null,
+  skus: null,
+  unsettledTransactions: null,
+};
 
 for (const definition of buildTestTableDefinitions()) {
   let table = byName.get(definition.name);
@@ -28,6 +36,7 @@ for (const definition of buildTestTableDefinitions()) {
   await schemaService.ensureTableSchema({ baseId: TEST_BASE_ID, tableId: table.table_id, schemaType: definition.type });
   if (definition.type === "returnOrders") mapping.returnOrders = table.table_id;
   else if (definition.type === "skus") mapping.skus = table.table_id;
+  else if (definition.type === "unsettledTransactions") mapping.unsettledTransactions = table.table_id;
   else mapping[definition.type][definition.month] = table.table_id;
 }
 

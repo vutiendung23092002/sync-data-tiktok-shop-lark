@@ -112,6 +112,50 @@ export function createTikTokClient({ appKey, appSecret, tokenProvider, fetchImpl
     return Object.freeze({ status: statementStatus, createTime: statementCreateTime, transactions: Object.freeze(transactions) });
   }
 
+  async function getUnsettledTransactions({ shopCipher, pageSize = 100 }) {
+    const transactions = [];
+    const seenPageTokens = new Set();
+    let totals;
+    let pageToken;
+    do {
+      const data = await request("/finance/202507/orders/unsettled", {
+        params: {
+          shop_cipher: shopCipher,
+          sort_field: "order_create_time",
+          sort_order: "ASC",
+          page_size: pageSize,
+          ...(pageToken ? { page_token: pageToken } : {}),
+        },
+      });
+      // The unsettled set can change while pages are being read. Keep the
+      // newest total so callers validate against the state seen on the last page.
+      totals = Object.freeze({
+        totalCount: Number(data.total_count ?? totals?.totalCount ?? 0),
+        estimatedSettlementAmount: data.sum_est_settlement_amount ?? totals?.estimatedSettlementAmount ?? null,
+        estimatedRevenueAmount: data.sum_est_revenue_amount ?? totals?.estimatedRevenueAmount ?? null,
+        estimatedAdjustmentAmount: data.sum_est_adjustment_amount ?? totals?.estimatedAdjustmentAmount ?? null,
+        estimatedFeeAmount: data.sum_est_fee_amount ?? totals?.estimatedFeeAmount ?? null,
+      });
+      transactions.push(...(data.transactions ?? []));
+      const nextPageToken = data.next_page_token || undefined;
+      if (nextPageToken && seenPageTokens.has(nextPageToken)) {
+        throw new Error("TikTok unsettled transactions pagination returned a repeated page token");
+      }
+      if (nextPageToken) seenPageTokens.add(nextPageToken);
+      pageToken = nextPageToken;
+    } while (pageToken);
+    return Object.freeze({
+      totals: totals ?? Object.freeze({
+        totalCount: 0,
+        estimatedSettlementAmount: null,
+        estimatedRevenueAmount: null,
+        estimatedAdjustmentAmount: null,
+        estimatedFeeAmount: null,
+      }),
+      transactions: Object.freeze(transactions),
+    });
+  }
+
   async function searchReturns({ shopCipher, createTimeGe, createTimeLt, pageSize = 50 }) {
     if (createTimeGe == null || createTimeLt == null) throw new Error("Both createTimeGe and createTimeLt are required");
     const returnOrders = [];
@@ -138,5 +182,12 @@ export function createTikTokClient({ appKey, appSecret, tokenProvider, fetchImpl
     return returnOrders;
   }
 
-  return Object.freeze({ request, searchOrders, getStatements, getStatementTransactions, searchReturns });
+  return Object.freeze({
+    request,
+    searchOrders,
+    getStatements,
+    getStatementTransactions,
+    getUnsettledTransactions,
+    searchReturns,
+  });
 }

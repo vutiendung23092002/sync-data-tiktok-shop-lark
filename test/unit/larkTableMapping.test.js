@@ -12,6 +12,7 @@ test("production mapping contains 12 unique tables for every monthly type", () =
   assert.equal(Object.keys(config.orders).length, 12);
   assert.equal(Object.keys(config.orderItems).length, 12);
   assert.equal(Object.keys(config.finance).length, 12);
+  assert.equal(config.unsettledTransactions, "tblkcawPHaBJQqSp");
 });
 
 test("table config resolves the documented month", () => {
@@ -29,4 +30,12 @@ test("test environment contains all provisioned tables", () => {
   assert.equal(Object.keys(config.finance).length, 12);
   assert.equal(config.returnOrders, "tbly3C00nrthqV0H");
   assert.equal(config.skus, "tblSu9mTdLHf6CRI");
+  assert.equal(config.unsettledTransactions, "tbl0uBF1PCAVgEne");
+});
+
+test("table config resolves the unsettled snapshot table without a month", () => {
+  assert.deepEqual(getLarkTableConfig({ environment: "test", type: "unsettledTransactions" }), {
+    baseId: "Df3WbKnmyaeUKJsphablcI8Jgeh",
+    tableId: "tbl0uBF1PCAVgEne",
+  });
 });

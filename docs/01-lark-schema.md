@@ -183,6 +183,30 @@ cũ và n8n — không có field nào lệch, giữ nguyên toàn bộ danh sác
 
 ---
 
+## 4.1. Unsettled Transactions Cty Hân Korea
+
+ID định danh vẫn là `transaction_id + "_" + shop_id`. Các khái niệm trùng Finance dùng đúng cùng label
+Lark, ví dụ `Doanh thu (Gross)`, `Thực thu (Net)`, `Tổng phí & thuế`, `Phí ship người bán` và toàn bộ
+fee/tax breakdown đang dùng chung. Giá trị lấy từ các field ước tính tương ứng: `est_revenue_amount`,
+`est_settlement_amount`, `est_fee_tax_amount` và `est_shipping_cost_amount`.
+
+Các field riêng của snapshot unsettled:
+
+| Label Lark | Type | Nguồn TikTok |
+|---|---|---|
+| Trạng thái | Text | `status` |
+| Lý do chưa quyết toán | Text | `unsettled_reason` |
+| Dự kiến quyết toán | Text | `estimated_settlement` |
+| Phí vận chuyển khách trả | Currency | `shipping_cost_breakdown.customer_paid_shipping_fee_amount` |
+| Phí dịch vụ COD | Currency | `revenue_breakdown.cod_service_fee_amount` |
+| Hoàn phí dịch vụ COD | Currency | `revenue_breakdown.refund_cod_service_fee_amount` |
+
+Bảng này là snapshot, không phải lịch sử. Record còn trong API được create/update/giữ nguyên; record thuộc đúng
+shop nhưng không còn trong API được xoá khỏi Lark. Job chỉ ghi sau khi số ID giao dịch duy nhất tải được khớp
+`total_count` của API.
+
+---
+
 ## 5. Return Orders Shop K
 
 Bảng này **chỉ có ở code cũ**, n8n hiện chưa có workflow tương ứng — không có gì để đối chiếu, giữ

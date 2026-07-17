@@ -43,3 +43,27 @@ test("Lark date-range search uses ExactDate filters, page size 500 and exact loc
   ]);
   assert.deepEqual(records.map((record) => record.record_id), ["from", "inside"]);
 });
+
+test("Lark batch delete sends record IDs in the SDK payload", async () => {
+  let request;
+  const client = createLarkClient({
+    appId: "app",
+    appSecret: "secret",
+    sdkClient: {
+      bitable: {
+        appTableRecord: {
+          batchDelete: async (input) => {
+            request = input;
+            return { code: 0, data: { records: [{ record_id: "rec-1", deleted: true }] } };
+          },
+        },
+      },
+    },
+  });
+  const result = await client.batchDelete("base", "table", ["rec-1"]);
+  assert.deepEqual(request, {
+    data: { records: ["rec-1"] },
+    path: { app_token: "base", table_id: "table" },
+  });
+  assert.equal(result[0].deleted, true);
+});

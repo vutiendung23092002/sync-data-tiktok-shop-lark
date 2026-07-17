@@ -3,10 +3,11 @@ import test from "node:test";
 
 import { buildTestTableDefinitions, LARK_SCHEMAS } from "../../src/config/larkSchemas.js";
 
-test("test provisioning defines exactly 38 tables including SKUS", () => {
+test("test provisioning defines exactly 39 tables including unsettled transactions", () => {
   const definitions = buildTestTableDefinitions();
-  assert.equal(definitions.length, 38);
-  assert.equal(new Set(definitions.map(({ name }) => name)).size, 38);
+  assert.equal(definitions.length, 39);
+  assert.equal(new Set(definitions.map(({ name }) => name)).size, 39);
+  assert.equal(definitions.some(({ type }) => type === "unsettledTransactions"), true);
 });
 
 test("every schema contains its unique ID and excludes legacy hash", () => {
