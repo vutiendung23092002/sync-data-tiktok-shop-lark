@@ -87,4 +87,36 @@ test("finance service rejects statements returned outside the requested UTC stat
   assert.equal(result.inRangeStatements, 1);
   assert.equal(result.outOfRangeStatements, 2);
   assert.equal(upserts.length, 1);
+  assert.deepEqual(upserts[0].lookup, {
+    type: "dateRange",
+    fieldName: "Ngày quyết toán",
+    from: 1_784_246_400,
+    to: 1_784_332_800,
+  });
+});
+
+test("finance lookup covers transaction statement_time outside its parent statement window", async () => {
+  const { service, upserts } = setup();
+  await service.sync({
+    statements: [{ id: "day-16", payment_status: "SETTLED", statement_time: 1_784_160_000 }],
+    shop: { shopId: "shop-1", shopName: "Shop" },
+    range: { from: 1_784_134_800, to: 1_784_221_200 },
+    statementRange: {
+      filterFrom: 1_784_160_000,
+      filterTo: 1_784_246_400,
+    },
+    fetchTransactions: async () => ({
+      status: "SETTLED",
+      transactions: [{ id: "tx-outside-parent-window", statement_time: 1_784_257_200 }],
+    }),
+  });
+
+  assert.equal(upserts.length, 1);
+  assert.equal(upserts[0].records[0].statementTime, 1_784_257_200);
+  assert.deepEqual(upserts[0].lookup, {
+    type: "dateRange",
+    fieldName: "Ngày quyết toán",
+    from: 1_784_160_000,
+    to: 1_784_257_201,
+  });
 });

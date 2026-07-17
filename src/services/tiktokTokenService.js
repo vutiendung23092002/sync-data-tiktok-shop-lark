@@ -1,13 +1,37 @@
 import { fetchWithRetry } from "../utils/retry.js";
 
 const REFRESH_URL = "https://auth.tiktok-shops.com/api/v2/token/refresh";
+const ACCESS_TOKEN_REFRESH_THRESHOLD_MS = 5 * 60_000;
+const DEFAULT_REFRESH_WAIT_DELAYS_MS = Object.freeze([100, 200, 400, 800, 1_600, 2_000]);
 
-export function createTikTokTokenService({ appKey, appSecret, shopId, tokenRepository, dedupLockRepository, fetchImpl = globalThis.fetch } = {}) {
+export function createTikTokTokenService({
+  appKey,
+  appSecret,
+  shopId,
+  tokenRepository,
+  dedupLockRepository,
+  fetchImpl = globalThis.fetch,
+  sleep = (delayMs) => new Promise((resolve) => setTimeout(resolve, delayMs)),
+  refreshWaitDelaysMs = DEFAULT_REFRESH_WAIT_DELAYS_MS,
+} = {}) {
   let cached;
   async function load() {
     cached = await tokenRepository.get(shopId);
     if (!cached) throw new Error(`No TikTok token stored for shop ${shopId}`);
     return cached;
+  }
+  function accessTokenIsFresh(token) {
+    return new Date(token.accessTokenExpireAt).getTime() > Date.now() + ACCESS_TOKEN_REFRESH_THRESHOLD_MS;
+  }
+  async function waitForRefreshedToken() {
+    let current = await load();
+    if (accessTokenIsFresh(current)) return current;
+    for (const delayMs of refreshWaitDelaysMs) {
+      await sleep(delayMs);
+      current = await load();
+      if (accessTokenIsFresh(current)) return current;
+    }
+    throw new Error(`Timed out waiting for TikTok token refresh for shop ${shopId}`);
   }
   async function refresh() {
     const result = await dedupLockRepository.withLock({ entityType: "token_refresh", entityId: shopId }, async () => {
@@ -31,12 +55,12 @@ export function createTikTokTokenService({ appKey, appSecret, shopId, tokenRepos
       });
       return load();
     });
-    if (!result.acquired) return load();
+    if (!result.acquired) return waitForRefreshedToken();
     return result.value;
   }
   async function getAccessToken() {
     const token = cached ?? await load();
-    if (new Date(token.accessTokenExpireAt).getTime() <= Date.now() + 5 * 60_000) return (await refresh()).accessToken;
+    if (!accessTokenIsFresh(token)) return (await refresh()).accessToken;
     return token.accessToken;
   }
   function isExpiredResponse(payload) {

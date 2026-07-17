@@ -35,6 +35,16 @@ function groupByTable(records) {
   return [...groups.values()];
 }
 
+function buildLookup(group, statementFilter) {
+  const statementTimes = group.records.map((record) => Number(record.statementTime));
+  return {
+    type: "dateRange",
+    fieldName: "Ngày quyết toán",
+    from: Math.min(statementFilter.from, ...statementTimes),
+    to: Math.max(statementFilter.to, ...statementTimes.map((value) => value + 1)),
+  };
+}
+
 export function createFinanceSyncService({ environment, larkUpsertService, logger } = {}) {
   if (!larkUpsertService) throw new Error("larkUpsertService is required");
 
@@ -75,13 +85,15 @@ export function createFinanceSyncService({ environment, larkUpsertService, logge
 
     const uniqueTransactions = dedupeMappedRecords(mappedTransactions);
     const records = uniqueTransactions.map((mapped) => {
-      if (mapped.statementTime == null) throw new Error(`Finance transaction ${mapped.uniqueKey} is missing statement_time`);
+      if (!Number.isFinite(Number(mapped.statementTime))) {
+        throw new Error(`Finance transaction ${mapped.uniqueKey} is missing statement_time`);
+      }
       const table = getLarkTableConfig({ environment, type: "finance", month: getVietnamMonth(mapped.statementTime) });
       return { ...table, mapped };
     });
     const tables = [];
-    const lookup = { type: "dateRange", fieldName: "Ngày quyết toán", from: range.from, to: range.to };
     for (const group of groupByTable(records)) {
+      const lookup = buildLookup(group, statementFilter);
       tables.push({ type: "finance", tableId: group.tableId, ...await larkUpsertService.upsert({ ...group, lookup, schemaType: "finance" }) });
     }
 
