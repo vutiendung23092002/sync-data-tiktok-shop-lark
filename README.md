@@ -177,16 +177,17 @@ tìm kiếm và xử lý tự động.
 
 ## Chạy bằng GitHub Actions
 
-Repository có ba workflow:
+Repository có bốn workflow:
 
 | Workflow | File | Lịch chạy |
 |---|---|---|
 | Orders + Items + SKUS | [sync-orders.yml](.github/workflows/sync-orders.yml) | Mỗi 20 phút |
 | Finance | [sync-finance.yml](.github/workflows/sync-finance.yml) | Phút 07 và 37 mỗi giờ |
+| Unsettled Transactions | [sync-unsettled-transactions.yml](.github/workflows/sync-unsettled-transactions.yml) | Phút 17, mỗi 2 giờ |
 | Return Orders | [sync-return-orders.yml](.github/workflows/sync-return-orders.yml) | Mỗi 20 phút |
 
 GitHub Actions cron dùng UTC. Các lịch trên lặp theo phút trong giờ nên phút chạy nhìn từ Việt Nam
-vẫn tương ứng `00/20/40` hoặc `07/37`.
+vẫn tương ứng `00/20/40`, `07/37` hoặc phút `17` mỗi 2 giờ.
 
 ### Repository Variables
 
@@ -218,9 +219,10 @@ Không lưu các giá trị này trong workflow YAML, README hoặc source code.
 ### Chạy thủ công
 
 1. Mở tab **Actions** trên GitHub.
-2. Chọn một trong ba workflow.
+2. Chọn một trong bốn workflow.
 3. Chọn **Run workflow**.
-4. Nhập `from` và `to` theo `YYYY/MM/DD`.
+4. Với Orders, Finance và Return Orders, nhập `from` và `to` theo `YYYY/MM/DD`; Unsettled Transactions
+   luôn lấy toàn bộ snapshot nên không có input ngày.
 5. Chạy và kiểm tra log tổng kết `fetched`, `creates`, `updates`, `unchanged`.
 
 Khi chạy thủ công, input `from/to` được ưu tiên hơn Repository Variables. `SYNC_ENV` và `DRY_RUN`

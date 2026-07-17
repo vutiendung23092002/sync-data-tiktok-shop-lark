@@ -111,7 +111,7 @@ Webhook n8n không dùng chung lock với dự án này, nên entity lock trong 
 thể điều phối hai hệ thống. Việc tránh race với n8n được thực hiện bằng chính sách ngày: cron
 Orders/Finance tối đa đến hôm qua; Return Orders tối đa đến hôm nay theo quyết định vận hành.
 
-`sync_tiktok.dedup_lock` chỉ được giữ cho `entity_type='token_refresh'`, vì ba workflow có concurrency
+`sync_tiktok.dedup_lock` chỉ được giữ cho `entity_type='token_refresh'`, vì bốn workflow có concurrency
 group khác nhau và có thể cùng refresh token. Lock này không nằm trên đường xử lý từng record.
 
 ### 5.2. Trùng do phân trang bị lặp
